@@ -39,20 +39,19 @@ CREATE TABLE files (
 yarn
 ```
 
-## Configuration
+## Options
 
-The application can be run directly or via a CLI command.
-To run directly, you need to supply the following
-environment variables:
-
-- `WATCH_FOLDER`: The folder to watch and sync
-- `DB_PATH`: Path to the SQLite database file
-
-To run via CLI, you can use the following command:
-
-```bash
-/path/to/package --dir /path/to/watch --db /path/to/database.db
+An options object should be provided to the application with
+the following properties:
+```json
+{
+  "watch.folder": "/path/to/watch",
+  "db.path": "/path/to/database.db"
+}
 ```
+
+You can also pass in a "watch.options" property that will be
+passed directly to `chokidar.watch`.
 
 ## Usage
 
