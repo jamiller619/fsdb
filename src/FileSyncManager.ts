@@ -343,11 +343,13 @@ export default class FileSyncManager extends EventEmitter {
       // Small delay to ensure file operations are complete
       await new Promise((resolve) => setTimeout(resolve, 100))
 
-      const fileRecord = await this.#createFileRecord(filePath)
-
       if (!this.#db) throw new Error('Database not initialized')
 
+      const fileRecord = await this.#createFileRecord(filePath)
+
       try {
+        // Attempt to update existing record, if the record
+        // doesn't exist, it will throw an error
         await this.#updateFileRecord(fileRecord)
       } catch {
         // No existing record, insert new one
