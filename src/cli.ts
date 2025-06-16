@@ -9,4 +9,4 @@ const options: ParseArgsOptionsConfig = {
 
 const { values } = parseArgs({ options })
 
-await main(values.dir as string, values.db as string)
+await main(values.db as string, values.dir as string)

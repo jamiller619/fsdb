@@ -1,12 +1,12 @@
 import path from 'node:path'
 import FileSyncManager from './FileSyncManager.ts'
 
-export default async function main(watchFolder: string, dbPath: string) {
+export default async function main(dbPath: string, watchFolder: string) {
   console.log('🎯 File Sync Manager Starting...')
   console.log(`📁 Watch Folder: ${path.resolve(watchFolder)}`)
   console.log(`💾 Database Path: ${path.resolve(dbPath)}`)
 
-  const syncManager = new FileSyncManager(watchFolder, dbPath)
+  const syncManager = new FileSyncManager(dbPath, watchFolder)
 
   process.on('SIGINT', () => gracefulShutdown('SIGINT'))
   process.on('SIGTERM', () => gracefulShutdown('SIGTERM'))

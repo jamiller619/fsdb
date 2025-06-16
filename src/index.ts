@@ -12,5 +12,5 @@ if (import.meta.url === `file://${process.argv[1]}`) {
     throw new Error(`❌ Error: WATCH_FOLDER and DB_PATH are both required!`)
   }
 
-  await main(watchFolder, dbPath)
+  await main(dbPath, watchFolder)
 }

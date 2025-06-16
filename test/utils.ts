@@ -11,6 +11,10 @@ export async function removeTestFiles() {
   }
 }
 
+export async function createTestDir(testDir: string) {
+  await fs.mkdir(testDir, { recursive: true })
+}
+
 export function getTestFilePaths() {
   const tmpDir = path.join(import.meta.dirname, '../tmp')
   const cliPath = path.join(import.meta.dirname, '../src/cli.ts')

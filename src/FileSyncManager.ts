@@ -1,7 +1,8 @@
 import { createHash } from 'node:crypto'
+import { EventEmitter } from 'node:events'
 import fs from 'node:fs/promises'
 import path from 'node:path'
-import { ChokidarOptions, type FSWatcher, watch } from 'chokidar'
+import { type ChokidarOptions, type FSWatcher, watch } from 'chokidar'
 import { type Database, open } from 'sqlite'
 import sqlite3 from 'sqlite3'
 
@@ -15,7 +16,7 @@ export type FileRecord = {
   updated_at: string
 }
 
-export default class FileSyncManager {
+export default class FileSyncManager extends EventEmitter {
   #db: Database | null = null
   #watcher: FSWatcher | null = null
   #watchFolder: string
@@ -27,6 +28,8 @@ export default class FileSyncManager {
     watchFolder: string,
     watchOptions: ChokidarOptions = {},
   ) {
+    super()
+
     this.#watchFolder = path.resolve(watchFolder)
     this.#dbPath = path.resolve(dbPath)
     this.#watchOptions = watchOptions
@@ -136,7 +139,7 @@ export default class FileSyncManager {
     if (!this.#db) throw new Error('Database not initialized')
 
     try {
-      await this.#db.run(
+      const result = await this.#db.run(
         /* sql */ `
         INSERT INTO files (file_path, size, modified_time, checksum, created_at, updated_at)
         VALUES (?, ?, ?, ?, ?, ?)`,
@@ -149,6 +152,12 @@ export default class FileSyncManager {
           record.updated_at,
         ],
       )
+
+      this.emit('file.added', {
+        ...record,
+        id: result.lastID,
+      })
+
       console.log(`➕ Added: ${record.file_path}`)
     } catch (error) {
       console.error(
@@ -162,7 +171,7 @@ export default class FileSyncManager {
   /**
    * Update an existing file record in the database
    */
-  async #updateFileRecord(record: FileRecord): Promise<void> {
+  async #updateFileRecord(record: FileRecord): Promise<FileRecord> {
     if (!this.#db) throw new Error('Database not initialized')
 
     try {
@@ -179,7 +188,12 @@ export default class FileSyncManager {
           record.file_path,
         ],
       )
+
+      this.emit('file.updated', record)
+
       console.log(`🔄 Updated: ${record.file_path}`)
+
+      return record
     } catch (error) {
       console.error(
         `❌ Failed to update file record for ${record.file_path}:`,
@@ -201,6 +215,9 @@ export default class FileSyncManager {
         DELETE FROM files WHERE file_path = ?`,
         [filePath],
       )
+
+      this.emit('file.removed', filePath)
+
       console.log(`➖ Removed: ${filePath}`)
     } catch (error) {
       console.error(`❌ Failed to remove file record for ${filePath}:`, error)
@@ -215,11 +232,13 @@ export default class FileSyncManager {
     if (!this.#db) throw new Error('Database not initialized')
 
     try {
-      const rows = await this.#db.all(/* sql */ `SELECT * FROM files`)
+      const rows = await this.#db.all<FileRecord[]>(
+        /* sql */ `SELECT * FROM files`,
+      )
       const recordMap = new Map<string, FileRecord>()
 
       rows.forEach((row: any) => {
-        recordMap.set(row.file_path, row as FileRecord)
+        recordMap.set(row.file_path, row)
       })
 
       return recordMap
@@ -286,13 +305,18 @@ export default class FileSyncManager {
         if (!dbRecord) {
           // New file - insert into database
           const fileRecord = await this.#createFileRecord(filePath)
+
           await this.#insertFileRecord(fileRecord)
         } else {
           // Existing file - check if changed
           const hasChanged = await this.#hasFileChanged(filePath, dbRecord)
           if (hasChanged) {
             const updatedRecord = await this.#createFileRecord(filePath)
-            await this.#updateFileRecord(updatedRecord)
+
+            await this.#updateFileRecord({
+              ...updatedRecord,
+              id: dbRecord.id,
+            })
           }
         }
       }
@@ -323,43 +347,17 @@ export default class FileSyncManager {
 
       if (!this.#db) throw new Error('Database not initialized')
 
-      // Try to update first, if no rows affected, then insert
-      const result = await this.#db.run(
-        /* sql */ `
-        UPDATE files
-        SET size = ?, modified_time = ?, checksum = ?, updated_at = ?
-        WHERE file_path = ?`,
-        [
-          fileRecord.size,
-          fileRecord.modified_time,
-          fileRecord.checksum,
-          fileRecord.updated_at,
-          fileRecord.file_path,
-        ],
-      )
-
-      if (result.changes === 0) {
+      try {
+        await this.#updateFileRecord(fileRecord)
+      } catch {
         // No existing record, insert new one
         await this.#insertFileRecord(fileRecord)
-      } else {
-        console.log(`🔄 Updated: ${filePath}`)
       }
     } catch (error) {
       console.error(
         `❌ Failed to handle file add/change for ${filePath}:`,
         error,
       )
-    }
-  }
-
-  /**
-   * Handle file deletion events
-   */
-  async #handleFileDelete(filePath: string): Promise<void> {
-    try {
-      await this.#removeFileRecord(filePath)
-    } catch (error) {
-      console.error(`❌ Failed to handle file deletion for ${filePath}:`, error)
     }
   }
 
@@ -391,7 +389,7 @@ export default class FileSyncManager {
       })
       .on('unlink', (filePath: string) => {
         console.log(`🗑️  File deleted: ${filePath}`)
-        this.#handleFileDelete(filePath)
+        this.#removeFileRecord(filePath)
       })
       .on('error', (error) => {
         console.error('❌ Watcher error:', error)

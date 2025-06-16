@@ -3,7 +3,7 @@ import { promises as fs } from 'node:fs'
 import path from 'node:path'
 import { after, afterEach, before, beforeEach, describe, test } from 'node:test'
 import FileSyncManager from '../src/FileSyncManager.ts'
-import { getTestFilePaths, removeTestFiles } from './utils.ts'
+import { createTestDir, getTestFilePaths, removeTestFiles } from './utils.ts'
 
 describe('FileSyncManager', async () => {
   let tmpDir: string
@@ -11,7 +11,7 @@ describe('FileSyncManager', async () => {
   let dbPath: string
   let syncManager: FileSyncManager
 
-  before(async () => {
+  before(() => {
     const paths = getTestFilePaths()
 
     tmpDir = paths.tmpDir
@@ -27,10 +27,9 @@ describe('FileSyncManager', async () => {
   beforeEach(async () => {
     // Clean up any existing files in test directory
     await removeTestFiles()
+    await createTestDir(testDir)
 
-    await fs.mkdir(testDir, { recursive: true })
-
-    syncManager = new FileSyncManager(testDir, dbPath)
+    syncManager = new FileSyncManager(dbPath, testDir)
   })
 
   afterEach(async () => {
@@ -161,8 +160,8 @@ describe('FileSyncManager', async () => {
   describe('Error Handling', () => {
     test('should handle invalid watch directory', async () => {
       const invalidSyncManager = new FileSyncManager(
-        '/nonexistent/directory',
         dbPath,
+        '/nonexistent/directory',
       )
 
       try {
@@ -203,10 +202,11 @@ describe('FileSyncManager', async () => {
   describe('Database Operations', () => {
     test('should handle database connection errors gracefully', async () => {
       // Try to use an invalid database path (directory instead of file)
-      const invalidDbPath = path.join(__dirname, 'invalid-db-dir')
+      const invalidDbPath = path.join(import.meta.dirname, 'invalid-db-dir')
+
       await fs.mkdir(invalidDbPath, { recursive: true })
 
-      const invalidSyncManager = new FileSyncManager(testDir, invalidDbPath)
+      const invalidSyncManager = new FileSyncManager(invalidDbPath, testDir)
 
       try {
         await invalidSyncManager.start()
