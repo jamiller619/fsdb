@@ -8,6 +8,9 @@
   "bin": {
     "fsdb": "src/cli.ts"
   },
+  "exports": {
+    ".": "./src/index.ts"
+  },
   "scripts": {
     "start": "node .",
     "dev": "node --watch .",
