@@ -1,7 +1,7 @@
 import { createHash } from 'node:crypto'
 import fs from 'node:fs/promises'
 import path from 'node:path'
-import { type FSWatcher, watch } from 'chokidar'
+import { ChokidarOptions, type FSWatcher, watch } from 'chokidar'
 import { type Database, open } from 'sqlite'
 import sqlite3 from 'sqlite3'
 
@@ -19,11 +19,17 @@ export default class FileSyncManager {
   #db: Database | null = null
   #watcher: FSWatcher | null = null
   #watchFolder: string
+  #watchOptions: ChokidarOptions
   #dbPath: string
 
-  constructor(watchFolder: string, dbPath: string) {
+  constructor(
+    dbPath: string,
+    watchFolder: string,
+    watchOptions: ChokidarOptions = {},
+  ) {
     this.#watchFolder = path.resolve(watchFolder)
     this.#dbPath = path.resolve(dbPath)
+    this.#watchOptions = watchOptions
   }
 
   /**
@@ -363,10 +369,15 @@ export default class FileSyncManager {
   async startWatching(): Promise<void> {
     console.log(`👁️  Starting file watcher for: ${this.#watchFolder}`)
 
-    this.#watcher = watch(this.#watchFolder, {
+    const defaultOptions: ChokidarOptions = {
       ignored: /(^|[\/\\])\../, // ignore dotfiles
-      persistent: true,
+    }
+
+    this.#watcher = watch(this.#watchFolder, {
+      ...defaultOptions,
+      ...this.#watchOptions, // Allow overriding with custom options
       ignoreInitial: true, // Don't trigger events for existing files on startup
+      persistent: true, // Keep watching for changes
     })
 
     this.#watcher
