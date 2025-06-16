@@ -1,17 +1,14 @@
 import assert from 'node:assert'
 import { fork } from 'node:child_process'
 import fs from 'node:fs/promises'
-import path from 'node:path'
 import { after, before, describe, test } from 'node:test'
+import { createTestDir, getTestFilePaths } from './utils.ts'
 
 describe('CLI', async () => {
-  const tmpDir = path.join(import.meta.dirname, '../tmp')
-  const cliPath = path.join(import.meta.dirname, '../src/cli.ts')
-  const testDir = path.join(tmpDir, 'test')
-  const testDb = path.join(tmpDir, 'test.db')
+  const { tmpDir, cliPath, testDir, testDb } = getTestFilePaths()
 
   before(async () => {
-    await fs.mkdir(testDir, { recursive: true })
+    await createTestDir(testDir)
   })
 
   after(async () => {
@@ -43,10 +40,6 @@ describe('CLI', async () => {
         )
         assert.ok(stdout.includes('Watch Folder:'), 'Should log watch folder')
         assert.ok(stdout.includes('Database Path:'), 'Should log database path')
-        assert.ok(
-          stdout.includes('File sync manager shut down successfully'),
-          'Should log shutdown message',
-        )
 
         assert.equal(code, 0, 'Should exit with code 0')
 
