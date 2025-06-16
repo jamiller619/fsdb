@@ -1,0 +1,56 @@
+{
+  "name": "fsdb",
+  "version": "0.0.1",
+  "description": "Keeps a SQLite table in sync with a folder in the file system.",
+  "main": "src/index.ts",
+  "license": "MIT",
+  "type": "module",
+  "bin": {
+    "fsdb": "src/cli.ts"
+  },
+  "scripts": {
+    "start": "node .",
+    "dev": "node --watch .",
+    "lint": "eslint src --ext .ts",
+    "type-check": "tsc --noEmit",
+    "test": "yarn test:unit && yarn test:integration",
+    "test:cli": "node --test test/cli.test.ts",
+    "test:sync": "node --test test/FileSyncManager.test.ts",
+    "test:integration": "node --test test/integration.test.ts",
+    "test:benchmark": "node --test test/benchmark.test.ts",
+    "test:all": "yarn test:unit && yarn test:integration && yarn test:benchmark",
+    "test:watch": "node --test --watch test/*.test.ts",
+    "test:coverage": "node --test --experimental-test-coverage test/*.test.ts",
+    "test:verbose": "node --test test/*.test.ts --verbose",
+    "pretest": "yarn type-check",
+    "posttest": "echo '✅ All tests completed successfully!'"
+  },
+  "keywords": [
+    "typescript",
+    "sqlite",
+    "sqlite3",
+    "sync",
+    "watcher",
+    "file-sync",
+    "file-watcher",
+    "chokidar"
+  ],
+  "author": "jamiller619@gmail.com",
+  "dependencies": {
+    "chokidar": "^4.0.3",
+    "sqlite": "^5.1.1",
+    "sqlite3": "^5.1.6"
+  },
+  "devDependencies": {
+    "@trivago/prettier-plugin-sort-imports": "^5.2.2",
+    "@types/node": "^24.0.1",
+    "@typescript-eslint/parser": "^8.34.0",
+    "eslint": "^9.29.0",
+    "prettier": "^3.5.3",
+    "typescript": "^5.3.0"
+  },
+  "engines": {
+    "node": ">=23.6.0"
+  },
+  "packageManager": "yarn@1.22.22"
+}
