@@ -16,27 +16,29 @@ export type FileRecord = {
   updated_at: string
 }
 
+export type FileSyncManagerOptions = {
+  'db.path': string
+  'watch.folder': string
+  'watch.options'?: ChokidarOptions
+}
+
 export default class FileSyncManager extends EventEmitter {
   #db: Database | null = null
+  #dbPath: string
   #watcher: FSWatcher | null = null
   #watchFolder: string
   #watchOptions: ChokidarOptions
-  #dbPath: string
 
-  constructor(
-    dbPath: string,
-    watchFolder: string,
-    watchOptions: ChokidarOptions = {},
-  ) {
+  constructor(options: FileSyncManagerOptions) {
     super()
 
-    this.#watchFolder = path.resolve(watchFolder)
-    this.#dbPath = path.resolve(dbPath)
-    this.#watchOptions = watchOptions
+    this.#watchFolder = path.resolve(options['watch.folder'])
+    this.#dbPath = path.resolve(options['db.path'])
+    this.#watchOptions = options['watch.options'] ?? {}
   }
 
   /**
-   * Initialize the database and create the files table if it doesn't exist
+   * Initialize the database and create the table if it doesn't exist
    */
   async #initializeDatabase(): Promise<void> {
     try {

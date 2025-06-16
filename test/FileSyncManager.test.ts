@@ -29,7 +29,10 @@ describe('FileSyncManager', async () => {
     await removeTestFiles()
     await createTestDir(testDir)
 
-    syncManager = new FileSyncManager(dbPath, testDir)
+    syncManager = new FileSyncManager({
+      'db.path': dbPath,
+      'watch.folder': testDir,
+    })
   })
 
   afterEach(async () => {
@@ -159,10 +162,10 @@ describe('FileSyncManager', async () => {
 
   describe('Error Handling', () => {
     test('should handle invalid watch directory', async () => {
-      const invalidSyncManager = new FileSyncManager(
-        dbPath,
-        '/nonexistent/directory',
-      )
+      const invalidSyncManager = new FileSyncManager({
+        'db.path': dbPath,
+        'watch.folder': '/nonexistent/directory',
+      })
 
       try {
         await invalidSyncManager.start()
@@ -206,7 +209,10 @@ describe('FileSyncManager', async () => {
 
       await fs.mkdir(invalidDbPath, { recursive: true })
 
-      const invalidSyncManager = new FileSyncManager(invalidDbPath, testDir)
+      const invalidSyncManager = new FileSyncManager({
+        'db.path': invalidDbPath,
+        'watch.folder': testDir,
+      })
 
       try {
         await invalidSyncManager.start()

@@ -1,17 +1,21 @@
 import path from 'node:path'
-import FileSyncManager from './FileSyncManager.ts'
+import process from 'node:process'
+import FileSyncManager, {
+  type FileSyncManagerOptions,
+} from './FileSyncManager.ts'
 
-export default async function main(dbPath: string, watchFolder: string) {
+export default async function main(
+  options: FileSyncManagerOptions,
+): Promise<void> {
   console.log('🎯 File Sync Manager Starting...')
-  console.log(`📁 Watch Folder: ${path.resolve(watchFolder)}`)
-  console.log(`💾 Database Path: ${path.resolve(dbPath)}`)
+  console.log(`📁 Watch Folder: ${path.resolve(options['watch.folder'])}`)
+  console.log(`💾 Database Path: ${path.resolve(options['db.path'])}`)
 
-  const syncManager = new FileSyncManager(dbPath, watchFolder)
+  const syncManager = new FileSyncManager(options)
 
   process.on('SIGINT', () => gracefulShutdown('SIGINT'))
   process.on('SIGTERM', () => gracefulShutdown('SIGTERM'))
 
-  // Handle uncaught errors
   process.on('uncaughtException', (error) => {
     console.error('❌ Uncaught Exception:', error)
     gracefulShutdown('uncaughtException')
@@ -25,14 +29,12 @@ export default async function main(dbPath: string, watchFolder: string) {
   try {
     await syncManager.start()
 
-    // Keep the process running
     process.stdin.resume()
   } catch (error) {
     console.error('❌ Failed to start application:', error)
     process.exit(1)
   }
 
-  // Graceful shutdown handling
   async function gracefulShutdown(signal: string) {
     console.log(`\n📡 Received ${signal}, initiating graceful shutdown...`)
     try {
