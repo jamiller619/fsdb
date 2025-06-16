@@ -1,6 +1,6 @@
 {
   "name": "fsdb",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "description": "Keep a SQLite table in sync with a folder on the file system.",
   "main": "src/index.ts",
   "license": "MIT",
